@@ -670,7 +670,7 @@ Citizen.CreateThread(function()
         if count > 0 then
             DrawTxt("Venčím : " .. count .. "/" .. Config.maxWalkedAnimals, 0.5, 0.01, 0.5, 0.5, true, 255, 255, 255,
                 255, true)
-            pause = fpsTimer()
+            pause = 5
         end
         Citizen.Wait(pause)
     end

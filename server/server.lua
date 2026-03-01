@@ -184,6 +184,10 @@ function makeProduct(animal, time)
         debugPrint("Zvíře " .. animal.id .. " je příliš mladé na produkci.")
         return
     end
+    if animal.sick > 0 then
+        debugPrint("Zvíře " .. animal.id .. " je nemocné, nemůže produkovat.")
+        return
+    end
     local railing = railings[animal.railing_id]
     for _, product in pairs(animalConfig.product) do
         local chance = math.random(0, 100)
@@ -339,12 +343,12 @@ function updateAnimalStats(animal)
         if animal.sick > 0 and animal.sick < 10 + (animal.happynes / 10) then
             animal.health = animal.health - 2
             -- Šance na uzdravení
-            local recoveryChance = Config.RecoveryChance -- 1% šance na uzdravení
-            if math.random() < recoveryChance then
-                animal.sick = 0
-                -- debugPrint("Zvíře " .. animal.id .. " se uzdravilo.")
-                DiscordWeb("Ranch", "Zvíře " .. animal.id .. " se samo uzdravilo.", "Ranch")
-            end
+            -- local recoveryChance = Config.RecoveryChance -- 1% šance na uzdravení
+            -- if math.random() < recoveryChance then
+            --     animal.sick = 0
+            --     -- debugPrint("Zvíře " .. animal.id .. " se uzdravilo.")
+            --     DiscordWeb("Ranch", "Zvíře " .. animal.id .. " se samo uzdravilo.", "Ranch")
+            -- end
         end
 
         if animal.sick >= 40 then
@@ -479,9 +483,10 @@ function checkForBreeding(railing_id, animalsInRailing)
     if animal.age >= cfg.adultAge then
       if animal.gender == 'male' then
         maleBreeds[animal.breed] = true
-      elseif animal.gender == 'female'
+elseif animal.gender == 'female'
          and animal.pregnant == 0
-         and animal.lastPregDiff >= cfg.noFuckTime
+         -- ÚPRAVA: Samice může otěhotnět, až když uběhne (Doba těhotenství + Doba odpočinku) od posledního početí
+         and animal.lastPregDiff >= (cfg.pregnancyTime + cfg.noFuckTime)
       then
         femaleCandidates[animal.breed] = femaleCandidates[animal.breed] or {}
         table.insert(femaleCandidates[animal.breed], animal)

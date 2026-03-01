@@ -53,14 +53,17 @@ Config.ReviveChance = 30
 Config.Skill = "vet"
 Config.ReviveItem = "animal_medicine_mild"
 
+
+Config.MaxRailing = 6
+
 Config.Key = 0x760A9C6F
 Config.KeyLabel = 'G' -- Label klávesy
 Config.FeedKey = 0x760A9C6F
 Config.FeedKeyLabel = 'G' -- Label klávesy
 Config.WaterKey = 0x8AAA0AD4
 Config.WaterKeyLabel = 'LALT' -- Label klávesy
-Config.Key2 = 0xF3830D8E
-Config.KeyLabel2 = 'J' -- Label klávesy
+Config.Key2 = 0x4CC0E2FE
+Config.KeyLabel2 = 'B' -- Label klávesy
 
 Config.maxWalkedAnimals = 10
 Config.DoctorJob = "vet"
@@ -340,7 +343,7 @@ Config.medicineItems = {
         item = "animal_herbal_brew",
         chance = 30,
         cure = 4,
-        job = "",
+        job = Config.DoctorJobs,
         grade = 1
     },
     animal_medicine_antibiotic = {

@@ -93,7 +93,7 @@ AddEventHandler("aprts_ranch:Client:getData",
             end
             railings[v.id] = v
             railings[v.id].obj = obj
-            exports.westhaven_cores:addClearZone(v.coords, 20.0) -- clearzona na emeraldu
+            -- exports.westhaven_cores:addClearZone(v.coords, 20.0) -- clearzona na emeraldu
         end
         for k, v in pairs(serverAnimals) do
             animals[v.id] = v

@@ -603,19 +603,24 @@ AddEventHandler("aprts_ranch:Server:gatherAnimalProduct", function(animalID, pro
                 level = 5
             end
             local reward = animal.count + count
-            animal.count = 0
-            MySQL:execute("UPDATE aprts_ranch_animals SET count = ? WHERE id = ?", {animal.count, animalID})
-            TriggerClientEvent('aprts_ranch:Client:updateAnimal', -1, animal)
-            TriggerClientEvent("aprts_ranch:Client:playAnim", _source, product.anim)
-            Wait(product.anim.time)
+            if animal.sick == 0 then
+                animal.count = 0
+                MySQL:execute("UPDATE aprts_ranch_animals SET count = ? WHERE id = ?", {animal.count, animalID})
+                TriggerClientEvent('aprts_ranch:Client:updateAnimal', -1, animal)
+                TriggerClientEvent("aprts_ranch:Client:playAnim", _source, product.anim)
+                Wait(product.anim.time)
 
-            exports.vorp_inventory:addItem(_source, product.item, reward)
-            notify(_source, "Sebral jsi produkt " .. reward .. "x " .. product.item)
-            lib.logger(_source, "RanchGatherAnimal",
-                "Hráč " .. Player(_source).state.Character.FirstName .. " " ..
-                    Player(_source).state.Character.LastName .. " sebral produkt " .. product.item .. " ze zvířete " ..
-                    animal.breed, "AnimalID:" .. animalID, "AnimalXP:" .. animal.xp, "AnimalLevel:" .. level,
-                "Product:" .. product.item, "Count:" .. reward, "RailingID:" .. animal.railing_id)
+                exports.vorp_inventory:addItem(_source, product.item, reward)
+                notify(_source, "Sebral jsi produkt " .. reward .. "x " .. product.item)
+                lib.logger(_source, "RanchGatherAnimal",
+                    "Hráč " .. Player(_source).state.Character.FirstName .. " " ..
+                        Player(_source).state.Character.LastName .. " sebral produkt " .. product.item ..
+                        " ze zvířete " .. animal.breed, "AnimalID:" .. animalID, "AnimalXP:" .. animal.xp,
+                    "AnimalLevel:" .. level, "Product:" .. product.item, "Count:" .. reward,
+                    "RailingID:" .. animal.railing_id)
+            else
+                notify(_source, "Zvíře je nemocné, není na něm nic použitelného")
+                end
         else
             notify(_source, "Produkt nenalezen")
         end
@@ -818,8 +823,8 @@ AddEventHandler("aprts_ranch:Server:waterAnimal", function(animalID, waterAmount
     meta.description = "Zbývá " .. meta.capacity
 
     if meta.capacity <= 0 then
-        meta.capacity = meta.capacity +1
-    meta.description = "Zbývá " .. meta.capacity
+        meta.capacity = meta.capacity + 1
+        meta.description = "Zbývá " .. meta.capacity
         exports.vorp_inventory:subItem(_source, Config.fullWaterItem, 1, item.metadata)
         -- print("odebírám kýbl s vodou" .. json.encode(item.metadata))
         exports.vorp_inventory:addItem(_source, Config.emptyWaterItem, 1)
@@ -836,14 +841,9 @@ AddEventHandler("aprts_ranch:Server:waterAnimal", function(animalID, waterAmount
 
     notify(_source, "Napojil jsi zvíře.")
     lib.logger(_source, 'RanchWaterAnimal',
-        "Hráč " .. playerName .. " napojil zvíře " .. animalID .. " druhu " .. animal.breed ..
-        " na krmítku: " .. animal.railing_id, 
-        "animalID:" .. animalID, 
-        "breed:" .. animal.breed, 
-        "railing_id:" .. animal.railing_id
-    )
+        "Hráč " .. playerName .. " napojil zvíře " .. animalID .. " druhu " .. animal.breed .. " na krmítku: " ..
+            animal.railing_id, "animalID:" .. animalID, "breed:" .. animal.breed, "railing_id:" .. animal.railing_id)
 end)
-
 
 RegisterServerEvent("aprts_ranch:Server:cleanAnimal")
 AddEventHandler("aprts_ranch:Server:cleanAnimal", function(animalID)
@@ -957,14 +957,12 @@ AddEventHandler("aprts_ranch:Server:slaughterAnimal", function(animalID)
                 -- calculate reward for dead animal from animal XP Level (Level1 = 1x, Level2 = 2x, Level3 = 3x, Level4 = 4x, Level5 = 5x)
                 if animal.xp >= Config.Level1 then
                     count = 1.5
-                    
                 end
                 if animal.xp >= Config.Level2 then
                     count = 2
                 end
                 if animal.xp >= Config.Level3 then
                     count = 2.5
-                    
                 end
                 if animal.xp >= Config.Level4 then
                     count = 3

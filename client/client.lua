@@ -47,27 +47,28 @@ function hasJob(jobtable)
     end
     return false
 end
---- Bezpečné zavolání exportu s návratovou hodnotou a defaultem
---- @param resourceName string - Název scriptu (např. 'aprts_metabolism')
---- @param functionName string - Název exportu (např. 'getMetabolism')
---- @param defaultReturn any - Co se má vrátit, když to selže (např. false, 0, nebo prázdná tabulka {})
---- @param ... any - Případné argumenty pro ten export
+function getRailingsPerLand(landID)
+    local count = 0
+    for _, railing in pairs(railings) do
+        if railing.land_id == landID then
+            count = count + 1
+        end
+    end
+    return count
+end
+
 function SafeExport(resourceName, functionName, defaultReturn, ...)
     -- 1. Rychlá kontrola, jestli script vůbec běží. Ušetří výkon, než volat pcall.
     if GetResourceState(resourceName) ~= "started" then
         debugPrint("^1[ERROR]^7 Export failed: " .. resourceName .. " is not started.")
         return defaultReturn
     end
-
-    -- 2. Samotný pokus o zavolání exportu
     local success, result = pcall(exports[resourceName][functionName], ...)
 
-    -- 3. Pokud proběhlo OK, vrátíme výsledek, jinak default
     if success then
         return result
     else
-        -- Volitelně: Můžeš si sem dát print pro debug, pokud chceš vidět, že to spadlo
-        -- print("^1[HUD ERROR]^7 Export failed: " .. resourceName .. ":" .. functionName)
+
         debugPrint("^1[ERROR]^7 Export failed: " .. resourceName .. ":" .. functionName .. " Error: " .. tostring(result))
         return defaultReturn
     end
@@ -93,6 +94,11 @@ end
 function placeRailing(coords, prop)
     local feeding = Config.feeding[prop].item
     if land then
+        if getRailingsPerLand(land.id) >= Config.MaxRailing then
+            notify("Na tento pozemek nelze postavit více ohrad, zrušte stávající ohradu pro postavení nové")
+            TriggerServerEvent("aprts_ranch:Server:returnItem", feeding)
+            return
+        end
         for _, railing in pairs(railings) do
             local railingPos = railing.coords
             local distance = GetDistanceBetweenCoords(coords, railingPos.x, railingPos.y, railingPos.z, true)
@@ -190,18 +196,32 @@ end
 Citizen.CreateThread(function()
     while true do
         local pause = 60000
-        local playerCoods = GetEntityCoords(PlayerPedId())
+        local playerCoords = GetEntityCoords(PlayerPedId())
+        local playerDead = IsPedDeadOrDying(PlayerPedId(), 1)
+        -- OPTIMALIZACE: Zjišťujeme nástroj hráče jen jednou za iteraci (ne pro každé zvíře zvlášť)
+        local tempTool = SafeExport("aprts_tools", "GetEquipedTool", nil)
+
         for _, animal in pairs(walkingAnimals) do
-            -- print(json.encode(animal))
-            if animal.obj then
+            -- Ujistíme se, že entita stále existuje
+            if animal.obj and DoesEntityExist(animal.obj) then
                 local animalPos = GetEntityCoords(animal.obj)
-                local distance = GetDistanceBetweenCoords(playerCoods, animalPos.x, animalPos.y, animalPos.z, 1)
+                if playerDead then
+                    -- Pokud je hráč mrtvý, pošleme zvíře domů a přeskočíme další kontroly
+                    sendHome(animal, animal.oldRailing)
+                    notify("Jsi mrtvý, posílám zvíře " .. animal.id .. " domů")
+                    goto continue -- Přeskočíme zbytek kódu pro toto zvíře
+                end
+                -- OPRAVA: Efektivnější a správný výpočet vzdálenosti ve FiveM (vector3 math)
+                local distance = #(playerCoords - animalPos)
+
+                -- 1. KONTROLA VZDÁLENOSTI
                 if distance >= Config.homeSafeDistance then
                     sendHome(animal, animal.oldRailing)
                     notify("Zvíře " .. animal.id .. " je od tebe moc daleko a uteklo ti")
+                    goto continue -- Přeskočíme zbytek kódu pro toto zvíře
                 end
-                local tempTool = SafeExport("aprts_tools", "GetEquipedTool", nil)
 
+                -- 2. STATUSY ZVÍŘETE (pokud nemáš vodítko?)
                 if tempTool ~= Config.leashItem then
                     animal.xp = animal.xp + 1
                     animal.energy = math.max(0, animal.energy - 1)
@@ -213,33 +233,39 @@ Citizen.CreateThread(function()
                 if animal.food <= 0 or animal.water <= 0 then
                     animal.health = animal.health - 1
                 end
-                -- animal.health = GetEntityHealth(animal.obj)
 
+                -- 3. KONTROLA ZDRAVÍ
                 if animal.health <= 0 then
-
                     notify(animal.breed .. " zemřelo hlady nebo žízní na procházce!")
-                    -- print("food:" .. animal.food, "watter:" .. animal.water)
                     animal.health = 10
                     sendHome(animal, animal.oldRailing)
-                elseif IsPedDeadOrDying(animal.obj) then
+                    goto continue
+                    
+                elseif IsPedDeadOrDying(animal.obj, 1) then
                     if GetPedSourceOfDeath(animal.obj) ~= 0 then
-                        -- print(GetPedSourceOfDeath(animal.obj))
                         notify(animal.breed .. " něco zabilo na procházce!")
-                        -- print("food:" .. animal.food, "watter:" .. animal.water)
                         animal.health = 10
                         sendHome(animal, animal.oldRailing)
+                        goto continue
                     else
+                        -- Oživení (pokud např. spadlo nebo scriptově umřelo bez zjevného zdroje)
                         ReviveInjuredPed(animal.obj)
                         SetEntityHealth(animal.obj, animal.health)
                     end
                 end
 
+                -- 4. KONTROLA ÚNAVY
                 if animal.energy <= 0 then
-                    notify("Zvíře " .. animal.id .. " je unavené posílám ho domů")
-
+                    notify("Zvíře " .. animal.id .. " je unavené, posílám ho domů")
+                    sendHome(animal, animal.oldRailing)
+                    goto continue
                 end
             end
+            
+            -- Cíl pro přeskočení (pokud je zvíře odesláno domů)
+            ::continue::
         end
+        
         Wait(pause)
     end
 end)
