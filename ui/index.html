@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Dynamický kontejner pro všechny informace (zvíře, krmítko, atd.) vpravo nahoře -->
+    <div id="overlays-container"></div>
+
+    <!-- Menu pro útulek uprostřed -->
+    <div id="shelter-menu" class="hidden">
+        <div class="shelter-header">
+            <h2>Útulek u kulhavý Betty</h2>
+            <button class="close-btn" onclick="closeShelter()">✖</button>
+        </div>
+        <div id="shelter-list" class="shelter-grid">
+            <!-- Dynamicky generováno z JS -->
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

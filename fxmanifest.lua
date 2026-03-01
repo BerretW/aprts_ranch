@@ -12,8 +12,14 @@ client_scripts {'config.lua', 'client/client.lua', 'client/events.lua', 'client/
                 'client/animations.lua', 'client/commands.lua', 'client/overrides.lua', 'client/exports.lua','client/shelter.lua','client/slaughterhouse.lua'}
 server_scripts {'@oxmysql/lib/MySQL.lua', 'config.lua', 'server/server.lua', 'server/events.lua', 'server/commands.lua',
                 'server/items.lua', 'server/overrides.lua'}
-ui_page "nui://jo_libs/nui/menu/index.html"
 
 shared_scripts {'@jo_libs/init.lua', '@ox_lib/init.lua'}
 
-jo_libs {'menu'}
+ui_page "ui/index.html"
+
+files {
+    'ui/index.html',
+    'ui/style.css',
+    'ui/script.js',
+    'ui/images/*.png'
+}

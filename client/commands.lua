@@ -18,9 +18,9 @@ if Config.Debug == true then
     end, false)
 
 end
--- RegisterCommand("placeRailing", function(source, args, rawCommand)
---     placeRailing(GetEntityCoords(PlayerPedId()),"p_mp_feedbaghang01x")
--- end, false)
+RegisterCommand("placeRailing", function(source, args, rawCommand)
+    placeRailing(GetEntityCoords(PlayerPedId()),"p_mp_feedbaghang01x")
+end, false)
 RegisterCommand("buyAnimal", function(source, args, rawCommand)
     if LocalPlayer.state.Character.Group == "admin" then
         newAnimal(args[1])

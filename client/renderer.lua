@@ -96,7 +96,8 @@ Citizen.CreateThread(function()
 
                                 TriggerServerEvent("aprts_ranch:Server:killAnimal", animal.id)
                             elseif animal.health == 0 then
-                                SetEntityHealth(animal.obj, 0)
+                                -- SetEntityHealth(animal.obj, 0)
+                                ApplyDamageToPed(animal.obj, 1000, false) -- Zabije zvíře, pokud jeho zdraví klesne na 0
                             end
                             -- Aktualizace velikosti zvířete
                             SetPedScale(animal.obj, scaleByAge(animal.breed, animal.age))

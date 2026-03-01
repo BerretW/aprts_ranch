@@ -257,9 +257,16 @@ function updateAnimalStats(animal)
     local animalConfig = Config.Animals[animal.breed]
     local time = getTimeStamp()
     if animalConfig then
-        animal.age = math.floor((time - animal.born) / (60 * 60 * 24))
+animal.age = math.floor((time - (animal.born or time)) / (60 * 60 * 24))
         debugPrint("Nový věk zvířete " .. animal.id .. " je " .. animal.age)
-        animal.lastPregDiff = (time - animal.pregnantStart) / (60 * 60 * 24)
+        
+        -- Ochrana: pokud zvíře nikdy březí nebylo (pregnantStart chybí)
+        local pStart = animal.pregnantStart
+        if pStart == nil or pStart == 0 then
+            animal.lastPregDiff = 9999 -- Nikdy nerodilo, může hned otěhotnět
+        else
+            animal.lastPregDiff = (time - pStart) / (60 * 60 * 24)
+        end
         debugPrint("Zvíře " .. animal.id .. " bylo těhotné před " .. animal.lastPregDiff .. "dny")
         -- smrt zvířete kvůli stáří¨
         -- debugPrint("Zvířeti je " .. animal.age .. " a maximální věk je " .. animalConfig.dieAge)
@@ -410,10 +417,13 @@ function updateAnimalStats(animal)
             if animal.pregnant > 0 then
                 -- debugPrint("Zvíře " .. animal.id .. " je těhotné.")
                 local pregnancyDuration = Config.Animals[animal.breed].pregnancyTime * 86400 -- dny na s
+                local pStart = animal.pregnantStart or time -- Fallback na aktuální čas
+                
                 debugPrint(time)
-                debugPrint(animal.pregnantStart)
+                debugPrint(pStart)
                 debugPrint(pregnancyDuration)
-                local differece = time - animal.pregnantStart
+                
+                local differece = time - pStart
                 -- debugPrint('Pregnancy duration: ' .. differece)
                 if differece >= pregnancyDuration then
                     -- debugPrint("Zvíře " .. animal.id .. " porodilo.")
@@ -432,7 +442,6 @@ function updateAnimalStats(animal)
         -- debugPrint("Neznámé plemeno zvířete: " .. animal.breed)
     end
 end
-
 
 function saveAnimalData(animal)
     animal.updated = getTimeStamp()
@@ -474,54 +483,51 @@ function handleAnimalDeath(animal)
 end
 
 function checkForBreeding(railing_id, animalsInRailing)
-  local maleBreeds = {}        -- plemena, která mají alespoň 1 samce
-  local femaleCandidates = {}  -- plemena → seznam samic připravených na páření
+    local maleBreeds = {} -- plemena, která mají alespoň 1 samce
+    local femaleCandidates = {} -- plemena → seznam samic připravených na páření
 
-  for _, animal in pairs(animalsInRailing) do
-    local cfg = Config.Animals[animal.breed]
-    -- pouze dospělí
-    if animal.age >= cfg.adultAge then
-      if animal.gender == 'male' then
-        maleBreeds[animal.breed] = true
-elseif animal.gender == 'female'
-         and animal.pregnant == 0
-         -- ÚPRAVA: Samice může otěhotnět, až když uběhne (Doba těhotenství + Doba odpočinku) od posledního početí
-         and animal.lastPregDiff >= (cfg.pregnancyTime + cfg.noFuckTime)
-      then
-        femaleCandidates[animal.breed] = femaleCandidates[animal.breed] or {}
-        table.insert(femaleCandidates[animal.breed], animal)
-      end
+    for _, animal in pairs(animalsInRailing) do
+        local cfg = Config.Animals[animal.breed]
+        -- pouze dospělí
+        if animal.age >= cfg.adultAge then
+            if animal.gender == 'male' then
+                maleBreeds[animal.breed] = true
+            elseif animal.gender == 'female' and animal.pregnant == 0 -- ÚPRAVA: Samice může otěhotnět, až když uběhne (Doba těhotenství + Doba odpočinku) od posledního početí
+            and animal.lastPregDiff >= (cfg.pregnancyTime + cfg.noFuckTime) then
+                femaleCandidates[animal.breed] = femaleCandidates[animal.breed] or {}
+                table.insert(femaleCandidates[animal.breed], animal)
+            end
+        end
     end
-  end
 
-  -- Pro každé plemeno, které má samečka i aspoň jednu zdravou samici,
-  -- pokus jedno náhodné samici navodit těhotenství
-  for breed, females in pairs(femaleCandidates) do
-    if maleBreeds[breed] and #females > 0 then
-      local mother = females[ math.random(#females) ]
-      attemptBreeding(mother, railing_id)
-      -- z každé ohrady jedno páření na cyklus
+    -- Pro každé plemeno, které má samečka i aspoň jednu zdravou samici,
+    -- pokus jedno náhodné samici navodit těhotenství
+    for breed, females in pairs(femaleCandidates) do
+        if maleBreeds[breed] and #females > 0 then
+            local mother = females[math.random(#females)]
+            attemptBreeding(mother, railing_id)
+            -- z každé ohrady jedno páření na cyklus
+        end
     end
-  end
 end
 
 -- Přepíšeme attemptBreeding, už dostává jedinou samici
 function attemptBreeding(mother, railing_id)
-  local cfg = Config.Animals[mother.breed]
-  local chance = cfg.pregnancyChance or 0
+    local cfg = Config.Animals[mother.breed]
+    local chance = cfg.pregnancyChance or 0
 
-  if math.random(0,100) < chance then
-    mother.pregnant = 1
-    mother.pregnantStart = getTimeStamp()
-    -- uložíme zpátky do DB jen ty dva sloupce
-    MySQL:execute([[
+    if math.random(0, 100) < chance then
+        mother.pregnant = 1
+        mother.pregnantStart = getTimeStamp()
+        -- uložíme zpátky do DB jen ty dva sloupce
+        MySQL:execute([[
       UPDATE aprts_ranch_animals
       SET pregnant = ?, pregnantStart = FROM_UNIXTIME(?)
       WHERE id = ?
     ]], {1, mother.pregnantStart, mother.id})
-    TriggerClientEvent('aprts_ranch:Client:updateAnimal', -1, mother)
-    DiscordWeb("Ranch","Zvíře "..mother.id.." právě otěhotnělo","Ranch")
-  end
+        TriggerClientEvent('aprts_ranch:Client:updateAnimal', -1, mother)
+        DiscordWeb("Ranch", "Zvíře " .. mother.id .. " právě otěhotnělo", "Ranch")
+    end
 end
 
 function handleAnimalBirth(mother)
@@ -614,11 +620,15 @@ Citizen.CreateThread(function()
             table.insert(ids, id)
         end
         if #ids > 0 then
-            -- pro každé pole vytvoříme CASE WHEN řetězec
+            -- pro každé pole vytvoříme CASE WHEN řetězec s ochranou proti nil
             local function buildCase(field)
                 local s = "CASE id "
                 for id, data in pairs(pendingUpdates) do
-                    s = s .. "WHEN " .. id .. " THEN " .. data[field] .. " "
+                    local val = data[field]
+                    if val == nil then
+                        val = 0
+                    end -- Ochrana: pokud chybí hodnota, dosadí se 0
+                    s = s .. "WHEN " .. id .. " THEN " .. tostring(val) .. " "
                 end
                 return s .. "END"
             end
@@ -638,7 +648,11 @@ Citizen.CreateThread(function()
           updated = CASE id ]] .. (function()
                 local s = " "
                 for id, data in pairs(pendingUpdates) do
-                    s = s .. "WHEN " .. id .. " THEN FROM_UNIXTIME(" .. data.updated .. ") "
+                    local val = data.updated
+                    if val == nil then
+                        val = 0
+                    end -- Ochrana pro timestamp
+                    s = s .. "WHEN " .. id .. " THEN FROM_UNIXTIME(" .. tostring(val) .. ") "
                 end
                 return s .. "END"
             end)() .. [[ 
