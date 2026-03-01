@@ -74,37 +74,34 @@ function SafeExport(resourceName, functionName, defaultReturn, ...)
     end
 end
 function sendHome(animal)
-    -- Bezpečně získáme ID původní ohrady
     local targetRailingID = animal.railing_id or animal.oldRailing
+
+    if targetRailingID == 0 then
+        -- KRAJNÍ MEZ: Zvíře bylo právě zakoupeno a ještě nemělo ohradu!
+        notify("Zakoupené zvíře " .. animal.breed .. " se splašilo a uteklo do útulku!")
+        if DoesEntityExist(animal.obj) then DeleteEntity(animal.obj) end
+        
+        -- Odeslání zvířete do útulku
+        TriggerServerEvent("aprts_ranch:Server:lostAnimal", animal.id)
+        walkingAnimals[animal.id] = nil
+        return
+    end
+
     local railing = railings[targetRailingID]
 
     if railing then
-        -- 1. SCÉNÁŘ: Ohrada stále existuje. Zvíře se VŽDY vrátí domů.
         notify("Zvíře " .. animal.breed .. " se vrací do své ohrady.")
-        
         if DoesEntityExist(animal.obj) then
-            -- Zvíře se aspoň vizuálně rozběhne směrem domů
             TaskGoToCoordAnyMeans(animal.obj, railing.coords.x, railing.coords.y, railing.coords.z, 2.0, 0, 0, 786603, 0xbf800000)
-            
-            -- Místo zablokování scriptu přes Wait(10000) použijeme asynchronní SetTimeout
             Citizen.SetTimeout(10000, function()
-                if DoesEntityExist(animal.obj) then
-                    DeleteEntity(animal.obj)
-                end
+                if DoesEntityExist(animal.obj) then DeleteEntity(animal.obj) end
             end)
         end
-
-        -- Server zvíře okamžitě zapíše zpět do bezpečí ohrady
         TriggerServerEvent("aprts_ranch:Server:putAnimal", targetRailingID, animal)
     else
-        -- 2. KRAJNÍ MEZ: Ohrada už na serveru neexistuje (hráč ji smazal / přesunul)
         notify("Ohrada pro zvíře " .. animal.breed .. " nebyla nalezena! Zvíře uteklo do útulku.")
-        
-        if DoesEntityExist(animal.obj) then
-            DeleteEntity(animal.obj)
-        end
-        
-        -- Tím, že se nezavolá 'putAnimal', zvíře na serveru automaticky propadne do útulku
+        if DoesEntityExist(animal.obj) then DeleteEntity(animal.obj) end
+        TriggerServerEvent("aprts_ranch:Server:lostAnimal", animal.id)
     end
     
     walkingAnimals[animal.id] = nil

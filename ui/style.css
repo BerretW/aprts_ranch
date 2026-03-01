@@ -19,8 +19,8 @@ body {
     right: 50px;
     display: flex;
     flex-direction: column;
-    gap: 15px; /* Mezera mezi panelem zvířete a krmítka */
-    pointer-events: none; /* Neblokuje klikání ve hře */
+    gap: 15px; 
+    pointer-events: none; 
 }
 
 .info-card {
@@ -50,20 +50,20 @@ body {
 }
 .info-row:last-child { border-bottom: none; }
 
-/* Menu útulku */
-#shelter-menu {
+/* Společný styl pro Útulek i Obchod - uprostřed obrazovky */
+#shelter-menu, #shop-menu {
     position: absolute;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    width: 800px;
-    max-height: 70vh;
-    background: url('images/wood_bg.png') #2a1b12; /* Fallback barva */
+    width: 850px;
+    max-height: 80vh;
+    background: url('images/wood_bg.png') #2a1b12; /* Temné dřevo */
     border: 4px solid #1a0f0a;
     border-radius: 12px;
     display: flex;
     flex-direction: column;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.9);
+    box-shadow: 0 15px 40px rgba(0,0,0,0.9);
 }
 
 .shelter-header {
@@ -73,9 +73,10 @@ body {
     justify-content: space-between;
     align-items: center;
     color: #e6c88e;
+    border-bottom: 2px solid #5a3c20;
 }
 
-.shelter-header h2 { margin: 0; font-size: 24px; }
+.shelter-header h2 { margin: 0; font-size: 26px; text-shadow: 2px 2px 4px #000; }
 
 .close-btn {
     background: none;
@@ -83,38 +84,50 @@ body {
     color: #e6c88e;
     font-size: 24px;
     cursor: pointer;
+    transition: 0.2s;
 }
-.close-btn:hover { color: #ff4c4c; }
+.close-btn:hover { color: #fc0a03; transform: scale(1.1); }
 
 .shelter-grid {
     display: flex;
     flex-wrap: wrap;
+    justify-content: center;
     gap: 15px;
     padding: 20px;
     overflow-y: auto;
 }
 
+/* Vylepšené kartičky zvířat */
 .animal-card {
-    background: rgba(0, 0, 0, 0.4);
-    border: 1px solid #5a3c20;
+    background: linear-gradient(180deg, rgba(40,25,15,0.8) 0%, rgba(20,10,5,0.9) 100%);
+    border: 2px solid #5a3c20;
     border-radius: 8px;
-    width: 230px;
+    width: 210px;
     padding: 15px;
     text-align: center;
     color: #e6c88e;
+    box-shadow: inset 0 0 10px rgba(0,0,0,0.8), 0 5px 10px rgba(0,0,0,0.5);
+    transition: transform 0.2s, border-color 0.2s;
+}
+
+.animal-card:hover {
+    transform: translateY(-5px); /* Kartička povyskočí */
+    border-color: #c49a51;       /* Zezlátne okraj */
 }
 
 .animal-card img {
     width: 100%;
     height: 120px;
-    object-fit: cover;
+    object-fit: contain;
     border-radius: 4px;
     margin-bottom: 10px;
+    filter: drop-shadow(2px 4px 6px black); /* Hezký stín pod obrázkem */
 }
 
-.animal-card h3 { margin: 0 0 5px 0; font-size: 18px; }
+.animal-card h3 { margin: 0 0 5px 0; font-size: 20px; text-shadow: 1px 1px 2px #000; }
 .animal-card p { margin: 5px 0; font-size: 14px; color: #ccc; }
 
+/* Tlačítko koupit */
 .buy-btn {
     margin-top: 10px;
     width: 100%;
@@ -122,10 +135,25 @@ body {
     color: white;
     border: 1px solid #2b4023;
     padding: 8px;
+    border-radius: 4px;
     cursor: pointer;
     font-family: 'Rye', serif;
     font-size: 16px;
     transition: 0.2s;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.4);
 }
 
 .buy-btn:hover { background: #5c854c; }
+
+/* Výběr pohlaví - ZATÍM SKRYTO */
+.gender-select {
+    display: none; /* AŽ TO BUDEŠ CHTÍT ZAPNOUT, SMAŽ TENTO ŘÁDEK */
+    width: 100%;
+    padding: 5px;
+    margin-top: 10px;
+    background: #1a0f0a;
+    color: #e6c88e;
+    border: 1px solid #5a3c20;
+    border-radius: 4px;
+    font-family: 'Rye', serif;
+}
