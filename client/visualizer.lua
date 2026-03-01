@@ -359,3 +359,67 @@ Citizen.CreateThread(function()
         Citizen.Wait(pause)
     end
 end)
+
+-- ==========================================
+-- TRACKER VENČENÝCH A VEDENÝCH ZVÍŘAT
+-- ==========================================
+Citizen.CreateThread(function()
+    while true do
+        local pause = 1000
+        local wCount = table.count(walkingAnimals)
+        local hCount = table.count(herdAnimals)
+
+        -- Pokud vedeš alespoň jedno zvíře (buď venčení nebo z útulku/obchodu)
+        if wCount > 0 or hCount > 0 then
+            -- Smyčka musí běžet na 250ms, aby udržela NUI kartu naživu (NUI má TTL 400ms)
+            pause = 250 
+            
+            local playerCoords = GetEntityCoords(PlayerPedId())
+            local trackerData = {}
+            
+            -- Hlavička panelu
+            local headerText = "Následující zvířata: " .. (wCount + hCount)
+            if wCount > 0 then
+                headerText = headerText .. " (Venčím: " .. wCount .. "/" .. Config.maxWalkedAnimals .. ")"
+            end
+            table.insert(trackerData, {text = headerText, color = "#e6c88e"})
+
+            -- 1. Výpis nově pořízených zvířat (herdAnimals - z obchodu/útulku)
+            for _, animal in pairs(herdAnimals) do
+                if DoesEntityExist(animal.obj) then
+                    local dist = math.floor(#(playerCoords - GetEntityCoords(animal.obj)))
+                    local name = animal.name or animal.breed
+                    
+                    -- Pokud je zvíře moc daleko (>50% bezpečné vzdálenosti), text zčervená
+                    local distColor = dist > (Config.homeSafeDistance * 0.5) and "#fc0a03" or "#aaaaaa"
+                    
+                    table.insert(trackerData, {
+                        text = "[Vedené] " .. name .. " | Vzdálenost: " .. dist .. "m",
+                        color = distColor
+                    })
+                end
+            end
+
+            -- 2. Výpis venčených zvířat (walkingAnimals)
+            for _, animal in pairs(walkingAnimals) do
+                if DoesEntityExist(animal.obj) then
+                    local dist = math.floor(#(playerCoords - GetEntityCoords(animal.obj)))
+                    local name = animal.name or animal.breed
+                    
+                    -- Varování: Pokud se blíží útěku (>80% bezpečné vzdálenosti), vzdálenost zčervená
+                    local distColor = dist > (Config.homeSafeDistance * 0.8) and "#fc0a03" or "#ffffff"
+                    
+                    table.insert(trackerData, {
+                        text = "[Venčení] " .. name .. " | Vzdál: " .. dist .. "m | Zdraví: " .. animal.health .. "% | Únava: " .. animal.energy .. "%",
+                        color = distColor
+                    })
+                end
+            end
+
+            -- Odeslání do NUI pod speciální kategorií "pack_tracker" (bez obrázku, kompaktní)
+            setDisplayData("pack_tracker", trackerData, false, nil)
+        end
+
+        Citizen.Wait(pause)
+    end
+end)

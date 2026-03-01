@@ -73,22 +73,41 @@ function SafeExport(resourceName, functionName, defaultReturn, ...)
         return defaultReturn
     end
 end
-function sendHome(animal, railingID)
-    local railing = railings[railingID]
-    local distance = GetDistanceBetweenCoords(GetEntityCoords(animal.obj), railing.coords.x, railing.coords.y,
-        railing.coords.z, 1)
-    if distance <= Config.homeSafeDistance then
-        TaskGoToCoordAnyMeans(animal.obj, railing.coords.x, railing.coords.y, railing.coords.z, 1.0, 0, 0, 786603,
-            0xbf800000)
-        Wait(10000)
-        DeleteEntity(animal.obj)
-        TriggerServerEvent("aprts_ranch:Server:putAnimal", railing.id, animal)
-        notify("Zvíře " .. animal.id .. " dorazilo zpět na svou ohradu")
-    else -- pokud je zvíře moc daleko, smaž ho
-        notify("Zvíře " .. animal.id .. " je moc daleko a nedorazilo zpět na ohradu")
-        DeleteEntity(animal.obj)
-        walkingAnimals[animal.id] = nil
+function sendHome(animal)
+    -- Bezpečně získáme ID původní ohrady
+    local targetRailingID = animal.railing_id or animal.oldRailing
+    local railing = railings[targetRailingID]
+
+    if railing then
+        -- 1. SCÉNÁŘ: Ohrada stále existuje. Zvíře se VŽDY vrátí domů.
+        notify("Zvíře " .. animal.breed .. " se vrací do své ohrady.")
+        
+        if DoesEntityExist(animal.obj) then
+            -- Zvíře se aspoň vizuálně rozběhne směrem domů
+            TaskGoToCoordAnyMeans(animal.obj, railing.coords.x, railing.coords.y, railing.coords.z, 2.0, 0, 0, 786603, 0xbf800000)
+            
+            -- Místo zablokování scriptu přes Wait(10000) použijeme asynchronní SetTimeout
+            Citizen.SetTimeout(10000, function()
+                if DoesEntityExist(animal.obj) then
+                    DeleteEntity(animal.obj)
+                end
+            end)
+        end
+
+        -- Server zvíře okamžitě zapíše zpět do bezpečí ohrady
+        TriggerServerEvent("aprts_ranch:Server:putAnimal", targetRailingID, animal)
+    else
+        -- 2. KRAJNÍ MEZ: Ohrada už na serveru neexistuje (hráč ji smazal / přesunul)
+        notify("Ohrada pro zvíře " .. animal.breed .. " nebyla nalezena! Zvíře uteklo do útulku.")
+        
+        if DoesEntityExist(animal.obj) then
+            DeleteEntity(animal.obj)
+        end
+        
+        -- Tím, že se nezavolá 'putAnimal', zvíře na serveru automaticky propadne do útulku
     end
+    
+    walkingAnimals[animal.id] = nil
 end
 
 function placeRailing(coords, prop)
@@ -195,74 +214,94 @@ end
 
 Citizen.CreateThread(function()
     while true do
-        local pause = 60000
-        local playerCoords = GetEntityCoords(PlayerPedId())
-        local playerDead = IsPedDeadOrDying(PlayerPedId(), 1)
-        -- OPTIMALIZACE: Zjišťujeme nástroj hráče jen jednou za iteraci (ne pro každé zvíře zvlášť)
+        local pause = 2000 -- Kratší prodleva pro pohotovou kontrolu vzdálenosti a života (2 sekundy)
+        local playerPed = PlayerPedId()
+        local playerCoords = GetEntityCoords(playerPed)
+        local playerDead = IsPedDeadOrDying(playerPed, 1)
         local tempTool = SafeExport("aprts_tools", "GetEquipedTool", nil)
 
-        for _, animal in pairs(walkingAnimals) do
-            -- Ujistíme se, že entita stále existuje
+        for animalId, animal in pairs(walkingAnimals) do
             if animal.obj and DoesEntityExist(animal.obj) then
                 local animalPos = GetEntityCoords(animal.obj)
-                if playerDead then
-                    -- Pokud je hráč mrtvý, pošleme zvíře domů a přeskočíme další kontroly
-                    sendHome(animal, animal.oldRailing)
-                    notify("Jsi mrtvý, posílám zvíře " .. animal.id .. " domů")
-                    goto continue -- Přeskočíme zbytek kódu pro toto zvíře
-                end
-                -- OPRAVA: Efektivnější a správný výpočet vzdálenosti ve FiveM (vector3 math)
-                local distance = #(playerCoords - animalPos)
+                local distanceToPlayer = #(playerCoords - animalPos)
 
-                -- 1. KONTROLA VZDÁLENOSTI
-                if distance >= Config.homeSafeDistance then
-                    sendHome(animal, animal.oldRailing)
-                    notify("Zvíře " .. animal.id .. " je od tebe moc daleko a uteklo ti")
-                    goto continue -- Přeskočíme zbytek kódu pro toto zvíře
-                end
-
-                -- 2. STATUSY ZVÍŘETE (pokud nemáš vodítko?)
-                if tempTool ~= Config.leashItem then
-                    animal.xp = animal.xp + 1
-                    animal.energy = math.max(0, animal.energy - 1)
-                    animal.food = math.max(0, animal.food - 1)
-                    animal.water = math.max(0, animal.water - 1)
-                    animal.happynes = math.min(100, animal.happynes + 2)
-                end
-
-                if animal.food <= 0 or animal.water <= 0 then
-                    animal.health = animal.health - 1
-                end
-
-                -- 3. KONTROLA ZDRAVÍ
-                if animal.health <= 0 then
-                    notify(animal.breed .. " zemřelo hlady nebo žízní na procházce!")
-                    animal.health = 10
-                    sendHome(animal, animal.oldRailing)
-                    goto continue
+                -- VYKRESLOVÁNÍ NUI/TEXTU KDYŽ JE HRÁČ BLÍZKO
+                if distanceToPlayer <= 1.5 then
+                    local data = {
+                        {text = "Druh: " .. animal.breed .. " | XP: " .. animal.xp, color = "#ffffff"},
+                        {text = "Energie: " .. animal.energy .. "%", color = "#ffffff"},
+                        {text = "Štěstí: " .. animal.happynes .. "%", color = "#ffffff"},
+                        {text = "Zdraví: " .. animal.health .. "%", color = "#fc0a03"},
+                        {text = "Hlad: " .. animal.food .. "/" .. Config.Animals[animal.breed].foodMax .. " Žízeň: " .. animal.water .. "/" .. Config.Animals[animal.breed].waterMax, color = "#00aaff"}
+                    }
                     
+                    -- Pokud používáš náš nový NUI systém (pokud ne, nahraď zpět za starý displayData3D)
+                    if setDisplayData then
+                        setDisplayData("walking_"..animal.id, data, true, animal.breed)
+                    else
+                        displayData3D(animalPos.x, animalPos.y, animalPos.z, data)
+                    end
+                    pause = 0
+                end
+
+                -- 1. KONTROLA HRÁČE (pokud zemřeš, zvíře běží bezpečně do ohrady)
+                if playerDead then
+                    notify("Jsi mrtvý, posílám zvíře " .. animal.breed .. " do bezpečí domů.")
+                    sendHome(animal)
+                    goto continue
+                end
+
+                -- 2. KONTROLA VZDÁLENOSTI OD HRÁČE
+                if distanceToPlayer >= Config.homeSafeDistance then
+                    notify("Zvíře " .. animal.breed .. " ti uteklo z dohledu a vrátilo se domů.")
+                    sendHome(animal)
+                    goto continue
+                end
+
+                -- 3. KONTROLA ZDRAVÍ ZVÍŘETE
+                if animal.health <= 0 then
+                    notify(animal.breed .. " padlo vysílením a vrací se domů!")
+                    animal.health = 10
+                    sendHome(animal)
+                    goto continue
                 elseif IsPedDeadOrDying(animal.obj, 1) then
                     if GetPedSourceOfDeath(animal.obj) ~= 0 then
-                        notify(animal.breed .. " něco zabilo na procházce!")
+                        notify(animal.breed .. " bylo napadeno na procházce, utíká domů!")
                         animal.health = 10
-                        sendHome(animal, animal.oldRailing)
+                        sendHome(animal)
                         goto continue
                     else
-                        -- Oživení (pokud např. spadlo nebo scriptově umřelo bez zjevného zdroje)
+                        -- Oživení při pádu z textury nebo jiném glitchi hry
                         ReviveInjuredPed(animal.obj)
                         SetEntityHealth(animal.obj, animal.health)
                     end
                 end
 
-                -- 4. KONTROLA ÚNAVY
-                if animal.energy <= 0 then
-                    notify("Zvíře " .. animal.id .. " je unavené, posílám ho domů")
-                    sendHome(animal, animal.oldRailing)
-                    goto continue
+                -- 4. KONTROLA ÚNAVY (Staty ubývají bezpečně jen každých 60 vteřin)
+                if not animal.lastStatUpdate then animal.lastStatUpdate = GetGameTimer() end
+                if GetGameTimer() - animal.lastStatUpdate >= 60000 then
+                    animal.lastStatUpdate = GetGameTimer()
+
+                    if tempTool ~= Config.leashItem then
+                        animal.xp = animal.xp + 1
+                        animal.energy = math.max(0, animal.energy - 1)
+                        animal.food = math.max(0, animal.food - 1)
+                        animal.water = math.max(0, animal.water - 1)
+                        animal.happynes = math.min(100, animal.happynes + 2)
+                    end
+
+                    if animal.food <= 0 or animal.water <= 0 then
+                        animal.health = animal.health - 1
+                    end
+
+                    if animal.energy <= 0 then
+                        notify("Zvíře " .. animal.breed .. " je unavené, posílám ho domů.")
+                        sendHome(animal)
+                        goto continue
+                    end
                 end
             end
             
-            -- Cíl pro přeskočení (pokud je zvíře odesláno domů)
             ::continue::
         end
         

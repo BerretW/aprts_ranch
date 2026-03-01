@@ -109,7 +109,8 @@ AddEventHandler("aprts_ranch:Client:getData",
         dataLoaded = true
     end)
 
-RegisterNetEvent("aprts_ranch:Client:getRailing")
+
+    RegisterNetEvent("aprts_ranch:Client:getRailing")
 AddEventHandler("aprts_ranch:Client:getRailing", function(railing)
 
     railings[railing.id] = railing
