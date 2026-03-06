@@ -37,6 +37,7 @@ end
 
 -- Zpracování zvířat v každém cyklu
 Citizen.CreateThread(function()
+    WaitForCharacter()
     while dataLoaded == false do
         Citizen.Wait(100)
     end
@@ -59,20 +60,40 @@ Citizen.CreateThread(function()
 
                     if animal.railing_id == railingId then
                         if not DoesEntityExist(animal.obj) and animal.home == 1 then
-                            -- debugPrint("animal home")
-                            -- Vytvoření modelu zvířete na základě pohlaví
-                            -- debugPrint("Vytvářím zvíře " .. animal.breed .. " na railingu " .. railingId)
-                            local anima = {}
-                            debugPrint("Animal: ", json.encode(Config.Animals[animal.breed]))
-                            anima.model = (animal.gender == "female") and Config.Animals[animal.breed].model or
-                                              Config.Animals[animal.breed].m_model
-                            anima.health = animal.health
 
-                            -- Náhodné umístění zvířete do hrazení
-                            local pos = getRandomPosInRailing(railing)
-                            pos = railingPos
-                            TriggerEvent("aprts_ranch:Client:spawnAnimal", anima, pos, true, animal.id, railingPos)
-                            Citizen.Wait(300)
+                            -- OPRAVA DUPLICITY: Kontrola, zda entita už ve světě neexistuje
+                            local foundEntity = nil
+                            local peds = GetGamePool('CPed')
+                            for _, ped in ipairs(peds) do
+                                -- Kontrolujeme, zda má ped náš dekorátor a zda se ID shoduje
+                                if DecorExistOn(ped, "RanchAnimalID") and DecorGetInt(ped, "RanchAnimalID") == animal.id then
+                                    foundEntity = ped
+                                    break
+                                end
+                            end
+
+                            if foundEntity then
+                                -- Pokud jsme zvíře našli, jen si ho přivlastníme a nespawnujeme nové
+                                animal.obj = foundEntity
+                                -- Pro jistotu aktualizujeme velikost a health, kdyby to byl sync glitch
+                                SetPedScale(animal.obj, scaleByAge(animal.breed, animal.age))
+                            else
+                                -- Pokud zvíře neexistuje, vytvoříme nové (původní kód)
+                                -- debugPrint("animal home")
+                                -- Vytvoření modelu zvířete na základě pohlaví
+                                -- debugPrint("Vytvářím zvíře " .. animal.breed .. " na railingu " .. railingId)
+                                local anima = {}
+                                -- debugPrint("Animal: ", json.encode(Config.Animals[animal.breed]))
+                                anima.model = (animal.gender == "female") and Config.Animals[animal.breed].model or
+                                                  Config.Animals[animal.breed].m_model
+                                anima.health = animal.health
+
+                                -- Náhodné umístění zvířete do hrazení
+                                local pos = getRandomPosInRailing(railing)
+                                pos = railingPos
+                                TriggerEvent("aprts_ranch:Client:spawnAnimal", anima, pos, true, animal.id, railingPos)
+                                Citizen.Wait(300)
+                            end
                         else
                             -- Pokud zvíře zemřelo, ohlásí to serveru
                             local health = GetEntityHealth(animal.obj)
@@ -90,7 +111,7 @@ Citizen.CreateThread(function()
                                 end
                                 TriggerServerEvent("aprts_clue:Server:addClue",
                                     "Zvíře bylo zraněno zbraní: " .. CauseOdDeath, GetEntityCoords(animal.obj),
-                                    "p_cougarbloodpools01x", 5.0,1)
+                                    "p_cougarbloodpools01x", 5.0, 1)
                                 TriggerServerEvent("aprts_ranch:Server:logKillAnimal", animal.id, CauseOdDeath,
                                     GetEntityCoords(animal.obj))
 
@@ -144,8 +165,6 @@ end)
 
 local DESPAWN_DELAY = 15 -- v sekundách, než se ohrada despawne
 local CHECK_INTERVAL = 1000 -- základní čekání mezi cykly
-
-
 
 -- Funkce pro vykreslování hoven a propů
 Citizen.CreateThread(function()

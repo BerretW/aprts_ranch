@@ -47,6 +47,20 @@ function hasJob(jobtable)
     end
     return false
 end
+
+function WaitForCharacter()
+    while not LocalPlayer do
+        Citizen.Wait(100)
+    end
+    while not LocalPlayer.state do
+        Citizen.Wait(100)
+    end
+    while not LocalPlayer.state.Character do
+        Citizen.Wait(100)
+    end
+end
+
+
 function getRailingsPerLand(landID)
     local count = 0
     for _, railing in pairs(railings) do
@@ -377,47 +391,47 @@ function CreateBlip(coords, sprite, name)
     return blip
 end
 
-Citizen.CreateThread(function()
-    while true do
-        local pause = 1000
-        local playerPed = PlayerPedId()
-        local playerPos = GetEntityCoords(playerPed)
-        for _, animal in pairs(walkingAnimals) do
-            if DoesEntityExist(animal.obj) then
-                local animPos = GetEntityCoords(animal.obj)
-                local distance = GetDistanceBetweenCoords(playerPos, animPos.x, animPos.y, animPos.z, 1)
-                if distance <= 1.5 then
-                    local data = {}
-                    -- zobraz druh, energii, štěstí, zdraví, hlad, žízeň zvířete
-                    data[1] = {
-                        text = "Druh: " .. animal.breed .. ". XP:" .. animal.xp,
-                        color = "#ffffff"
-                    }
-                    data[2] = {
-                        text = "Energie: " .. animal.energy .. "%",
-                        color = "#ffffff"
-                    }
-                    data[3] = {
-                        text = "Štěstí: " .. animal.happynes .. "%",
-                        color = "#ffffff"
-                    }
-                    data[4] = {
-                        text = "Zdraví: " .. animal.health .. "%",
-                        color = "#fc0a03"
-                    }
-                    data[5] = {
-                        text = "Hlad: " .. animal.food .. "/" .. Config.Animals[animal.breed].foodMax .. " Žízeň: " ..
-                            animal.water .. "/" .. Config.Animals[animal.breed].waterMax,
-                        color = "#00aaff"
-                    }
-                    displayData3D(animPos.x, animPos.y, animPos.z, data)
-                    pause = fpsTimer()
-                end
-            end
-        end
-        Citizen.Wait(pause)
-    end
-end)
+-- Citizen.CreateThread(function()
+--     while true do
+--         local pause = 1000
+--         local playerPed = PlayerPedId()
+--         local playerPos = GetEntityCoords(playerPed)
+--         for _, animal in pairs(walkingAnimals) do
+--             if DoesEntityExist(animal.obj) then
+--                 local animPos = GetEntityCoords(animal.obj)
+--                 local distance = GetDistanceBetweenCoords(playerPos, animPos.x, animPos.y, animPos.z, 1)
+--                 if distance <= 1.5 then
+--                     local data = {}
+--                     -- zobraz druh, energii, štěstí, zdraví, hlad, žízeň zvířete
+--                     data[1] = {
+--                         text = "Druh: " .. animal.breed .. ". XP:" .. animal.xp,
+--                         color = "#ffffff"
+--                     }
+--                     data[2] = {
+--                         text = "Energie: " .. animal.energy .. "%",
+--                         color = "#ffffff"
+--                     }
+--                     data[3] = {
+--                         text = "Štěstí: " .. animal.happynes .. "%",
+--                         color = "#ffffff"
+--                     }
+--                     data[4] = {
+--                         text = "Zdraví: " .. animal.health .. "%",
+--                         color = "#fc0a03"
+--                     }
+--                     data[5] = {
+--                         text = "Hlad: " .. animal.food .. "/" .. Config.Animals[animal.breed].foodMax .. " Žízeň: " ..
+--                             animal.water .. "/" .. Config.Animals[animal.breed].waterMax,
+--                         color = "#00aaff"
+--                     }
+--                     displayData3D(animPos.x, animPos.y, animPos.z, data)
+--                     pause = fpsTimer()
+--                 end
+--             end
+--         end
+--         Citizen.Wait(pause)
+--     end
+-- end)
 
 Citizen.CreateThread(function()
     while true do

@@ -317,12 +317,23 @@ AddEventHandler('aprts_ranch:Client:useNameTag', function()
         end
     end
 end)
+Citizen.CreateThread(function()
+    DecorRegister("RanchAnimalID", 3) -- 3 = Integer
+end)
+
+-- Upravený event spawnAnimal
 RegisterNetEvent('aprts_ranch:Client:spawnAnimal')
 AddEventHandler('aprts_ranch:Client:spawnAnimal', function(anima, pos, single, animalID, railingPos)
     local animal = animals[animalID]
     debugPrint("Spawning animal: " .. animalID)
     if animal then
         animal.obj = spawnAnimal(anima, pos, single)
+        
+        -- ZDE JE OPRAVA: Nastavíme ID zvířete na entitu
+        if DoesEntityExist(animal.obj) then
+            DecorSetInt(animal.obj, "RanchAnimalID", animalID)
+        end
+        -- KONEC OPRAVY
 
         SetEntityHealthToMax(animal.obj, animal.health) -- Nastavení zdraví
 

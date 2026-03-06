@@ -941,8 +941,6 @@ AddEventHandler("aprts_ranch:Server:addWater", function(railingID, amount)
         MySQL:execute("UPDATE aprts_ranch_railing SET water = ? WHERE id = ?", {railing.water, railingID})
         TriggerClientEvent('aprts_ranch:Client:updateRailing', -1, railing)
         notify(_source, "Naplnil jsi krmítko vodou")
-        exports.vorp_inventory:subItem(_source, Config.fullWaterItem, 1)
-        exports.vorp_inventory:addItem(_source, Config.emptyWaterItem, 1)
     else
         notify(_source, "Railing not found.")
     end

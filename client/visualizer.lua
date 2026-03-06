@@ -23,13 +23,13 @@ end
 Citizen.CreateThread(function()
     local lastJson = ""
     while true do
-        Citizen.Wait(200) 
+        Citizen.Wait(200)
         local currentTime = GetGameTimer()
         local activeStates = {}
 
         -- Kontrola platnosti dat (pokud hráč odejde, hodnota se přestane updatovat a vyprší)
         for cat, state in pairs(nuiStates) do
-            if currentTime - state.lastUpdate < 400 then 
+            if currentTime - state.lastUpdate < 400 then
                 activeStates[cat] = {
                     data = state.data,
                     showImage = state.showImage,
@@ -58,53 +58,166 @@ local function prepareData(animal)
     local data = {}
 
     if runningAnimation ~= nil then
-        if animal.name then data[1] = {text = "Jméno: " .. animal.name, color = "#ffffff"} end
+        if animal.name then
+            data[1] = {
+                text = "Jméno: " .. animal.name,
+                color = "#ffffff"
+            }
+        end
     else
         if tool == Config.BrushItem then
-            if animal.name then data[1] = {text = "Jméno: " .. animal.name, color = "#ffffff"} end
-            data[2] = {text = "Čistota: " .. animal.clean .. "%", color = "#ffffff"}
-            data[3] = {text = "Stiskni[" .. Config.KeyLabel .. "] pro vyčištění", color = "#ffddff"}
+            if animal.name then
+                data[1] = {
+                    text = "Jméno: " .. animal.name,
+                    color = "#ffffff"
+                }
+            end
+            data[2] = {
+                text = "Čistota: " .. animal.clean .. "%",
+                color = "#ffffff"
+            }
+            data[3] = {
+                text = "Stiskni[" .. Config.KeyLabel .. "] pro vyčištění",
+                color = "#ffddff"
+            }
         elseif medicine ~= nil then
-            if animal.name then data[1] = {text = "Jméno: " .. animal.name, color = "#ffffff"} end
-            data[2] = {text = "Zdraví: " .. animal.health .. "%", color = "#fc0a03"}
-            data[3] = {text = "Pohlaví: " .. animal.gender, color = "#00aaff"}
-            data[4] = {text = "Věk: " .. animal.age .. " let / Dospělost: " .. (animal.adult and "ano" or "ne"), color = "#ffffff"}
+            if animal.name then
+                data[1] = {
+                    text = "Jméno: " .. animal.name,
+                    color = "#ffffff"
+                }
+            end
+            data[2] = {
+                text = "Zdraví: " .. animal.health .. "%",
+                color = "#fc0a03"
+            }
+            data[3] = {
+                text = "Pohlaví: " .. animal.gender,
+                color = "#00aaff"
+            }
+            data[4] = {
+                text = "Věk: " .. animal.age .. " let / Dospělost: " .. (animal.adult and "ano" or "ne"),
+                color = "#ffffff"
+            }
             if hasJob(Config.DoctorJobs) == true then
-                data[5] = {text = "Nemoc: " .. animal.sick .. "%", color = "#ffffff"}
+                data[5] = {
+                    text = "Nemoc: " .. animal.sick .. "%",
+                    color = "#ffffff"
+                }
             elseif animal.sick > 1 then
-                data[5] = {text = "Nemocné", color = "#fc0a03"}
+                data[5] = {
+                    text = "Nemocné",
+                    color = "#fc0a03"
+                }
             end
             if animal.gender == "female" then
-                data[6] = {text = (animal.pregnant == 0 and "Není březí" or "Březí"), color = "#ffffff"}
+                data[6] = {
+                    text = (animal.pregnant == 0 and "Není březí" or "Březí"),
+                    color = "#ffffff"
+                }
             end
-            data[7] = {text = "Stiskni [" .. Config.KeyLabel .. "] pro léčbu", color = "#ffddff"}
+            data[7] = {
+                text = "Stiskni [" .. Config.KeyLabel .. "] pro léčbu",
+                color = "#ffddff"
+            }
         elseif tool == nil then
-            if animal.name then data[1] = {text = "Jméno: " .. animal.name, color = "#ffffff"} end
-            data[2] = {text = "Zdraví: " .. animal.health .. "%", color = "#fc0a03"}
-            data[3] = {text = "Pohlaví: " .. animal.gender, color = "#00aaff"}
-            data[4] = {text = "Věk: " .. animal.age .. " let / Dospělost: " .. (animal.adult and "ano" or "ne"), color = "#ffffff"}
-            data[5] = {text = "Hlad: " .. animal.food .. "/" .. animalConfig.foodMax .. " Žízeň: " .. animal.water .. "/" .. animalConfig.waterMax, color = "#00aaff"}
-            data[6] = {text = "Štěstí: " .. animal.happynes .. "% / Energie: " .. animal.energy .. "%", color = "#ffffff"}
-            data[7] = {text = "Čistota: " .. animal.clean .. "% / Kvalita: " .. animal.xp, color = "#ffffff"}
-            if animal.sick > 1 then data[8] = {text = "Nemocné", color = "#fc0a03"} end
-            if animal.gender == "female" then
-                data[9] = {text = (animal.pregnant == 0 and "Není březí" or "Březí"), color = "#ffffff"}
+            if animal.name then
+                data[1] = {
+                    text = "Jméno: " .. animal.name,
+                    color = "#ffffff"
+                }
             end
-            data[10] = {text = Config.FeedKeyLabel .. " = nakrmit, " .. Config.WaterKeyLabel .. " = napojit", color = "#ffddff"}
+            data[2] = {
+                text = "Zdraví: " .. animal.health .. "%",
+                color = "#fc0a03"
+            }
+            data[3] = {
+                text = "Pohlaví: " .. animal.gender,
+                color = "#00aaff"
+            }
+            data[4] = {
+                text = "Věk: " .. animal.age .. " let / Dospělost: " .. (animal.adult and "ano" or "ne"),
+                color = "#ffffff"
+            }
+            data[5] = {
+                text = "Hlad: " .. animal.food .. "/" .. animalConfig.foodMax .. " Žízeň: " .. animal.water .. "/" ..
+                    animalConfig.waterMax,
+                color = "#00aaff"
+            }
+            data[6] = {
+                text = "Štěstí: " .. animal.happynes .. "% / Energie: " .. animal.energy .. "%",
+                color = "#ffffff"
+            }
+            data[7] = {
+                text = "Čistota: " .. animal.clean .. "% / Kvalita: " .. animal.xp,
+                color = "#ffffff"
+            }
+            if animal.sick > 1 then
+                data[8] = {
+                    text = "Nemocné",
+                    color = "#fc0a03"
+                }
+            end
+            if animal.gender == "female" then
+                data[9] = {
+                    text = (animal.pregnant == 0 and "Není březí" or "Březí"),
+                    color = "#ffffff"
+                }
+            end
+            data[10] = {
+                text = Config.FeedKeyLabel .. " = nakrmit, " .. Config.WaterKeyLabel .. " = napojit",
+                color = "#ffddff"
+            }
         elseif tool == Config.leashItem and table.count(walkingAnimals) < Config.maxWalkedAnimals then
-            if animal.name then data[1] = {text = "Jméno: " .. animal.name, color = "#ffffff"} end
-            data[2] = {text = "Zdraví: " .. animal.health .. "%", color = "#fc0a03"}
-            data[3] = {text = "Energie: " .. animal.energy .. "%", color = "#ffffff"}
-            data[4] = {text = "Věk: " .. animal.age .. " let / Dospělost: " .. (animal.adult and "ano" or "ne"), color = "#ffffff"}
-            data[5] = {text = "Hlad: " .. animal.food .. "/" .. animalConfig.foodMax .. " Žízeň: " .. animal.water .. "/" .. animalConfig.waterMax, color = "#00aaff"}
-            data[6] = {text = "Stiskni [" .. Config.KeyLabel .. "] Venčit", color = "#ffddff"}
+            if animal.name then
+                data[1] = {
+                    text = "Jméno: " .. animal.name,
+                    color = "#ffffff"
+                }
+            end
+            data[2] = {
+                text = "Zdraví: " .. animal.health .. "%",
+                color = "#fc0a03"
+            }
+            data[3] = {
+                text = "Energie: " .. animal.energy .. "%",
+                color = "#ffffff"
+            }
+            data[4] = {
+                text = "Věk: " .. animal.age .. " let / Dospělost: " .. (animal.adult and "ano" or "ne"),
+                color = "#ffffff"
+            }
+            data[5] = {
+                text = "Hlad: " .. animal.food .. "/" .. animalConfig.foodMax .. " Žízeň: " .. animal.water .. "/" ..
+                    animalConfig.waterMax,
+                color = "#00aaff"
+            }
+            data[6] = {
+                text = "Stiskni [" .. Config.KeyLabel .. "] Venčit",
+                color = "#ffddff"
+            }
         else
             for k, product in pairs(animalConfig.product) do
-                if product.gather == 2 and tool == product.tool and (animal.gender == product.gender or product.gender == nil) then
-                    if animal.name then data[1] = {text = "Jméno: " .. animal.name, color = "#ffffff"} end
-                    data[2] = {text = "Zdraví: " .. animal.health .. "%", color = "#fc0a03"}
-                    data[3] = {text = "Produkt: " .. animal.count .. "ks", color = "#ffffff"}
-                    data[4] = {text = "Stiskni [" .. Config.KeyLabel .. "] pro sběr " .. product.name, color = "#ffddff"}
+                if product.gather == 2 and tool == product.tool and
+                    (animal.gender == product.gender or product.gender == nil) then
+                    if animal.name then
+                        data[1] = {
+                            text = "Jméno: " .. animal.name,
+                            color = "#ffffff"
+                        }
+                    end
+                    data[2] = {
+                        text = "Zdraví: " .. animal.health .. "%",
+                        color = "#fc0a03"
+                    }
+                    data[3] = {
+                        text = "Produkt: " .. animal.count .. "ks",
+                        color = "#ffffff"
+                    }
+                    data[4] = {
+                        text = "Stiskni [" .. Config.KeyLabel .. "] pro sběr " .. product.name,
+                        color = "#ffddff"
+                    }
                     break
                 end
             end
@@ -128,7 +241,10 @@ Citizen.CreateThread(function()
                 local poopPos = poop.coords
                 local distance = #(playerPos - vector3(poopPos.x, poopPos.y, poopPos.z))
                 if distance <= 1.5 then
-                    setDisplayData("poop", {{text = "[" .. Config.KeyLabel .. "] Sebrat hovno", color = "#fc0a03"}}, true, "poop")
+                    setDisplayData("poop", {{
+                        text = "[" .. Config.KeyLabel .. "] Sebrat hovno",
+                        color = "#fc0a03"
+                    }}, true, "poop")
                     pause = fpsTimer()
                     if IsControlJustPressed(0, Config.Key) then
                         TriggerServerEvent("aprts_ranch:Server:pickupPoop", poop.id)
@@ -143,10 +259,13 @@ Citizen.CreateThread(function()
                         local productPos = product.coords
                         local distance = #(playerPos - vector3(productPos.x, productPos.y, productPos.z))
                         if distance <= 1.5 then
-                            local data = {
-                                {text = product.amount .. "x " .. product.name, color = "#fc0a03"}, 
-                                {text = "[" .. Config.KeyLabel .. "] Sebrat", color = "#fc0a03"}
-                            }
+                            local data = {{
+                                text = product.amount .. "x " .. product.name,
+                                color = "#fc0a03"
+                            }, {
+                                text = "[" .. Config.KeyLabel .. "] Sebrat",
+                                color = "#fc0a03"
+                            }}
                             setDisplayData("product", data, true, "basket")
                             pause = fpsTimer()
                             if IsControlJustPressed(0, Config.Key) then
@@ -171,21 +290,21 @@ Citizen.CreateThread(function()
         local playerPed = PlayerPedId()
         local playerPos = GetEntityCoords(playerPed)
         local tool = SafeExport("aprts_tools", "GetEquipedTool", nil)
-        
+
         if land and land.access and land.access >= 1 then
             for _, animal in pairs(animals) do
                 if DoesEntityExist(animal.obj) and animal.health > 0 then
                     local animalPos = GetEntityCoords(animal.obj)
                     local distance = #(playerPos - animalPos)
                     local animalConfig = Config.Animals[animal.breed]
-                    
+
                     if distance <= 1.5 then
                         -- Zapíše se do nezávislé kategorie "animal"
                         setDisplayData("animal", prepareData(animal), true, animal.breed)
                         FreezeEntityPosition(animal.obj, true)
                         closestAnimal = animal
                         pause = 0
-                        
+
                         if runningAnimation == nil then
                             if tool == Config.BrushItem then
                                 if IsControlJustPressed(0, Config.Key) then
@@ -207,6 +326,7 @@ Citizen.CreateThread(function()
                                     Wait(Config.Animation.feed.time)
                                 end
                                 if IsControlJustPressed(0, Config.WaterKey) then
+                                    
                                     TriggerServerEvent("aprts_ranch:Server:waterAnimal", animal.id, 50.0)
                                     Wait(Config.Animation.water.time)
                                 end
@@ -217,9 +337,11 @@ Citizen.CreateThread(function()
                                 end
                             else
                                 for k, product in pairs(animalConfig.product) do
-                                    if product.gather == 2 and tool == product.tool and (animal.gender == product.gender or product.gender == nil) then
+                                    if product.gather == 2 and tool == product.tool and
+                                        (animal.gender == product.gender or product.gender == nil) then
                                         if IsControlJustPressed(0, Config.Key) then
-                                            TriggerServerEvent("aprts_ranch:Server:gatherAnimalProduct", animal.id, product)
+                                            TriggerServerEvent("aprts_ranch:Server:gatherAnimalProduct", animal.id,
+                                                product)
                                             Wait(product.anim.time)
                                         end
                                         break
@@ -229,10 +351,14 @@ Citizen.CreateThread(function()
                             break
                         end
                     else
-                        if closestAnimal == animal then closestAnimal = nil end
+                        if closestAnimal == animal then
+                            closestAnimal = nil
+                        end
                     end
 
-                    if IsEntityFrozen(animal.obj) then FreezeEntityPosition(animal.obj, false) end
+                    if IsEntityFrozen(animal.obj) then
+                        FreezeEntityPosition(animal.obj, false)
+                    end
                 end
             end
         end
@@ -244,27 +370,38 @@ end)
 -- PORCOVÁNÍ A OŽIVOVÁNÍ ZVÍŘAT
 -- ==========================================
 Citizen.CreateThread(function()
-    while not LocalPlayer.state do Wait(100) end
-    while not LocalPlayer.state.Character do Wait(100) end
-    repeat Wait(100) until LocalPlayer.state.IsInSession
-    
+    while not LocalPlayer.state do
+        Wait(100)
+    end
+    while not LocalPlayer.state.Character do
+        Wait(100)
+    end
+    repeat
+        Wait(100)
+    until LocalPlayer.state.IsInSession
+
     while true do
         local pause = 1000
         local playerPed = PlayerPedId()
         local playerPos = GetEntityCoords(playerPed)
         local tool = SafeExport("aprts_tools", "GetEquipedTool", nil)
-        
+
         if land and land.access and land.access >= 1 then
             if tool == Config.CleaverItem then
                 for _, animal in pairs(animals) do
                     if DoesEntityExist(animal.obj) and animal.health == 0 then
                         local animalPos = GetEntityCoords(animal.obj)
                         if #(playerPos - animalPos) <= 1.5 then
-                            setDisplayData("corpse", {
-                                {text = "Zdechlina", color = "#fc0a03"},
-                                {text = "Dospělost: " .. (animal.adult and "ano" or "ne"), color = "#fc0a03"},
-                                {text = "Stiskni [" .. Config.KeyLabel .. "] pro naporcování", color = "#fc0a03"}
-                            }, true, "meat")
+                            setDisplayData("corpse", {{
+                                text = "Zdechlina",
+                                color = "#fc0a03"
+                            }, {
+                                text = "Dospělost: " .. (animal.adult and "ano" or "ne"),
+                                color = "#fc0a03"
+                            }, {
+                                text = "Stiskni [" .. Config.KeyLabel .. "] pro naporcování",
+                                color = "#fc0a03"
+                            }}, true, "meat")
                             pause = 0
                             if IsControlJustPressed(0, Config.Key) then
                                 TriggerServerEvent("aprts_ranch:Server:slaughterAnimal", animal.id)
@@ -281,10 +418,13 @@ Citizen.CreateThread(function()
                 if DoesEntityExist(animal.obj) and IsEntityDead(animal.obj) then
                     local animalPos = GetEntityCoords(animal.obj)
                     if #(playerPos - animalPos) <= 1.5 then
-                        setDisplayData("revive", {
-                            {text = "Zraněné zvíře " .. animal.id, color = "#fc0a03"},
-                            {text = "Stiskni [" .. Config.KeyLabel .. "] pro pokus o oživení", color = "#fc0a03"}
-                        }, true, "medicine")
+                        setDisplayData("revive", {{
+                            text = "Zraněné zvíře " .. animal.id,
+                            color = "#fc0a03"
+                        }, {
+                            text = "Stiskni [" .. Config.KeyLabel .. "] pro pokus o oživení",
+                            color = "#fc0a03"
+                        }}, true, "medicine")
                         pause = 0
                         if IsControlJustPressed(0, Config.Key) then
                             TriggerServerEvent("aprts_ranch:Server:reviveAnimal", animal.id)
@@ -312,29 +452,54 @@ Citizen.CreateThread(function()
                 local railingPos = vector3(railing.coords.x, railing.coords.y, railing.coords.z)
                 local distance = #(playerPos - railingPos)
                 local configFeeding = Config.feeding[railing.prop]
-                
+
                 if distance <= railing.size then
-                    local data = {
-                        {text = "[" .. railing.id .. "] Zvířat: " .. getCountAnimlsonRailing(railing) .. "/" .. railing.size, color = "#00aaff"},
-                        {text = "Jídla: " .. railing.food .. "/" .. configFeeding.food, color = "#00aaff"},
-                        {text = "Vody: " .. railing.water .. "/" .. configFeeding.water, color = "#ffffff"}
-                    }
-                    
+                    local data = {{
+                        text = "[" .. railing.id .. "] Zvířat: " .. getCountAnimlsonRailing(railing) .. "/" ..
+                            railing.size,
+                        color = "#00aaff"
+                    }, {
+                        text = "Jídla: " .. railing.food .. "/" .. configFeeding.food,
+                        color = "#00aaff"
+                    }, {
+                        text = "Vody: " .. railing.water .. "/" .. configFeeding.water,
+                        color = "#ffffff"
+                    }}
+
                     if distance <= 1.5 then
                         if tool == Config.fullWaterItem then
-                            data[4] = {text = "Stiskni[" .. Config.KeyLabel .. "] doplnění vody", color = "#00aaff"}
+                            data[4] = {
+                                text = "Stiskni[" .. Config.KeyLabel .. "] doplnění vody",
+                                color = "#00aaff"
+                            }
                             if IsControlJustPressed(0, Config.Key) then
-                                exports["aprts_tools"]:UnequipTool()
-                                TriggerServerEvent("aprts_ranch:Server:addWater", railing.id, 100)
+                                local toolID = exports.aprts_tools:GetEquipedToolID()
+                                local success = VorpCore.Callback.TriggerAwait("aprts_water_fill:Server:RemoveCapacity",
+                                    toolID, 100)
+                                if success then
+                                    notify("Zbývá " .. tostring(success) .. " vody v nástroji.")
+                                    TriggerServerEvent("aprts_ranch:Server:addWater", railing.id, 100)
+                                else
+                                    notify("Není dostatek vody v nástroji.")
+                                    return
+                                end
+
                             end
                         elseif tool == Config.fullFoodItem then
-                            data[4] = {text = "Stiskni [" .. Config.KeyLabel .. "] doplnění jídla", color = "#00aaff"}
+                            data[4] = {
+                                text = "Stiskni [" .. Config.KeyLabel .. "] doplnění jídla",
+                                color = "#00aaff"
+                            }
                             if IsControlJustPressed(0, Config.Key) then
                                 exports["aprts_tools"]:UnequipTool()
                                 TriggerServerEvent("aprts_ranch:Server:addFood", railing.id, 100)
                             end
-                        elseif tool == nil and table.count(herdAnimals) < 1 and land.access > 0 and table.count(walkingAnimals) > 0 then
-                            data[4] = {text = "[" .. Config.KeyLabel2 .. "] Uvázat Zvířata", color = "#20aaff"}
+                        elseif tool == nil and table.count(herdAnimals) < 1 and land.access > 0 and
+                            table.count(walkingAnimals) > 0 then
+                            data[4] = {
+                                text = "[" .. Config.KeyLabel2 .. "] Uvázat Zvířata",
+                                color = "#20aaff"
+                            }
                             if IsControlJustPressed(0, Config.Key2) then
                                 for _, animal in pairs(walkingAnimals) do
                                     if DoesEntityExist(animal.obj) and #(GetEntityCoords(animal.obj) - playerPos) <= 30 then
@@ -345,14 +510,16 @@ Citizen.CreateThread(function()
                             end
                         end
                     end
-                    
+
                     pause = fpsTimer()
                     -- Zapíše se do nezávislé kategorie "railing"
                     setDisplayData("railing", data, true, "railing")
                     closestRailing = railing
                     break
                 else
-                    if closestRailing == railing then closestRailing = nil end
+                    if closestRailing == railing then
+                        closestRailing = nil
+                    end
                 end
             end
         end
@@ -372,27 +539,30 @@ Citizen.CreateThread(function()
         -- Pokud vedeš alespoň jedno zvíře (buď venčení nebo z útulku/obchodu)
         if wCount > 0 or hCount > 0 then
             -- Smyčka musí běžet na 250ms, aby udržela NUI kartu naživu (NUI má TTL 400ms)
-            pause = 250 
-            
+            pause = 250
+
             local playerCoords = GetEntityCoords(PlayerPedId())
             local trackerData = {}
-            
+
             -- Hlavička panelu
             local headerText = "Následující zvířata: " .. (wCount + hCount)
             if wCount > 0 then
                 headerText = headerText .. " (Venčím: " .. wCount .. "/" .. Config.maxWalkedAnimals .. ")"
             end
-            table.insert(trackerData, {text = headerText, color = "#e6c88e"})
+            table.insert(trackerData, {
+                text = headerText,
+                color = "#e6c88e"
+            })
 
             -- 1. Výpis nově pořízených zvířat (herdAnimals - z obchodu/útulku)
             for _, animal in pairs(herdAnimals) do
                 if DoesEntityExist(animal.obj) then
                     local dist = math.floor(#(playerCoords - GetEntityCoords(animal.obj)))
                     local name = animal.name or animal.breed
-                    
+
                     -- Pokud je zvíře moc daleko (>50% bezpečné vzdálenosti), text zčervená
                     local distColor = dist > (Config.homeSafeDistance * 0.5) and "#fc0a03" or "#aaaaaa"
-                    
+
                     table.insert(trackerData, {
                         text = "[Vedené] " .. name .. " | Vzdálenost: " .. dist .. "m",
                         color = distColor
@@ -405,12 +575,13 @@ Citizen.CreateThread(function()
                 if DoesEntityExist(animal.obj) then
                     local dist = math.floor(#(playerCoords - GetEntityCoords(animal.obj)))
                     local name = animal.name or animal.breed
-                    
+
                     -- Varování: Pokud se blíží útěku (>80% bezpečné vzdálenosti), vzdálenost zčervená
                     local distColor = dist > (Config.homeSafeDistance * 0.8) and "#fc0a03" or "#ffffff"
-                    
+
                     table.insert(trackerData, {
-                        text = "[Venčení] " .. name .. " | Vzdál: " .. dist .. "m | Zdraví: " .. animal.health .. "% | Únava: " .. animal.energy .. "%",
+                        text = "[Venčení] " .. name .. " | Vzdál: " .. dist .. "m | Zdraví: " .. animal.health ..
+                            "% | Únava: " .. animal.energy .. "%" .. " | Štěstí: " .. animal.happynes .. "%",
                         color = distColor
                     })
                 end
